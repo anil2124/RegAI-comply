@@ -1,0 +1,34 @@
+# docker-compose.yml
+
+# We specify the version of the Docker Compose file format.
+version: '3.8'
+
+# 'services' is where we define all the containers our application needs.
+services:
+  # We're defining our first service and naming it 'db'.
+  db:
+    # This tells Docker to use the official PostgreSQL image, version 13.
+    image: postgres:13
+    
+    # These are the environment variables that will be set inside the container.
+    # This is how we configure the PostgreSQL database.
+    environment:
+      - POSTGRES_USER=regai_user
+      - POSTGRES_PASSWORD=regai_password
+      - POSTGRES_DB=regai_db
+      
+    # This maps a port from our computer (host) to a port inside the container.
+    # It lets us connect to the database from our local machine using tools
+    # if we ever need to, by connecting to localhost:5432.
+    ports:
+      - "5432:5432"
+      
+    # This creates a 'volume' named 'postgres_data'. Volumes are used to
+    # persist data even if the container is stopped or removed. This ensures
+    # our complaint data doesn't get erased every time we restart the database.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# This defines the top-level volumes that can be used by our services.
+volumes:
+  postgres_data:

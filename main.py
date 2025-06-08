@@ -1,40 +1,42 @@
-from fastapi import FastAPI
-# Import BaseModel from Pydantic
-from pydantic import BaseModel
-from typing import Optional # We'll use this to mark optional fields
+# main.py
 
-# Create an instance of the FastAPI class
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import models
+from database import engine
+
+# Import our router modules
+# --- ADD 'reporting' TO THIS LINE ---
+from routers import complaints, transcription, analysis, reporting
+
+# This command ensures that the database tables are created
+models.Base.metadata.create_all(bind=engine)
+
+# Create the main FastAPI application instance
 app = FastAPI()
 
-# --- Pydantic Data Model ---
-# This class defines the structure of a complaint.
-# By inheriting from BaseModel, we get all the Pydantic magic.
-class Complaint(BaseModel):
-    # We'll start with a few key fields from the PRD
-    device_name: str
-    defect: str
-    symptoms: Optional[str] = None # This field is optional
-    # Let's add a placeholder for the raw text from the audio
-    raw_transcript: str
+# Add CORS middleware
+origins = [
+    "http://localhost",
+    "http://localhost:5173",
+    "null",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Define a "path operation decorator"
+# Include the routers from our modules
+app.include_router(complaints.router)
+app.include_router(transcription.router)
+app.include_router(analysis.router)
+# --- ADD THIS LINE TO INCLUDE THE NEW ROUTER ---
+app.include_router(reporting.router)
+
+
 @app.get("/")
 def read_root():
-    return {"message": "Hello from the RegAI Comply Backend!"}
-
-
-# --- Complaint Processing Endpoint ---
-# We've changed the type annotation from `data: dict` to `complaint: Complaint`
-@app.post("/process-complaint")
-def process_complaint(complaint: Complaint):
-    # Now, FastAPI will automatically validate the incoming data against our
-    # Complaint model. If the data is malformed (e.g., device_name is missing),
-    # FastAPI will automatically return a helpful error message to the client.
-
-    # We can access the data using dot notation, with full autocomplete!
-    print(f"Received complaint for device: {complaint.device_name}")
-
-    return {
-        "status": f"Complaint received for device '{complaint.device_name}'",
-        "complaint_data": complaint.model_dump() # .model_dump() converts the model to a dict
-    }
+    return {"status": "RegAI Comply Backend is running"}
